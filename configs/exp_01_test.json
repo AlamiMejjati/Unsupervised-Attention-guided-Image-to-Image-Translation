@@ -1,0 +1,6 @@
+{
+  "description": "Testing with trained model.",
+  "network_version": "pytorch",
+  "dataset_name": "horse2zebra_test",
+  "do_flipping": 0
+}
