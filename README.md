@@ -1,6 +1,7 @@
 # Unsupervised Attention-Guided image to image translation
 
-This repository contains the Tensorflow code for our paper Unsupervised Attention-Guided Image to Image translation. This code is based on the Tensorflow implementation of CycleGan provided by [Harry Yang](https://github.com/leehomyc/cyclegan-1).
+This repository contains the Tensorflow code for our paper Unsupervised Attention-Guided Image to Image translation ![#f03c15]((Add link to paper)) `#f03c15`. 
+This code is based on the Tensorflow implementation of CycleGan provided by [Harry Yang](https://github.com/leehomyc/cyclegan-1).
 
 By leveraging attention, our architecture (shown in the figure bellow) only maps relevant areas of the image, and by doing so, further enhances the quality of image to image translation.
 
@@ -24,7 +25,7 @@ Top row in the figure bellow are input images to map and bottom row are the mapp
 ### Getting Started with the code
 ### Prepare dataset
 * You can either download one of the defaults CycleGAN datasets or use your own dataset. 
-	* Download a CycleGAN dataset (e.g. horse2zebra):
+	* Download a CycleGAN dataset (e.g. horse2zebra, apple2orange):
 	```bash
 	bash ./download_datasets.sh horse2zebra
 	```
@@ -66,11 +67,7 @@ python main.py  --to_train=1 --log_dir=./output/AAGAN/exp_01 --config_filename=.
 
 ### Restoring from the previous checkpoint.
 ```bash
-python main.py \
-    --to_train=2 \
-    --log_dir=./output/cyclegan/exp_01 \
-    --config_filename=./configs/exp_01.json \
-    --checkpoint_dir=./output/AAGAN/exp_01/#timestamp#
+python main.py --to_train=2 --log_dir=./output/cyclegan/exp_01 --config_filename=./configs/exp_01.json --checkpoint_dir=./output/AAGAN/exp_01/#timestamp#
 ```
 ### Testing
 * Create the testing dataset.
@@ -81,8 +78,4 @@ python main.py \
 	```
 * Run testing.
 ```bash
-python main.py \
-    --to_train=0 \
-    --log_dir=./output/AAGAN/exp_01 \
-    --config_filename=./configs/exp_01_test.json \
-    --checkpoint_dir=./output/AAGAN/exp_01/#old_timestamp# 
+python main.py --to_train=0 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01_test.json --checkpoint_dir=./output/AAGAN/exp_01/#old_timestamp# 
