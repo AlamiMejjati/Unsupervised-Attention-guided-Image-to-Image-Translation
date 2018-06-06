@@ -15,11 +15,19 @@ The figure bellow displays automatically learned attention maps on various trans
 
 ### Horse to zebra image translation results: 
 #### Horse to Zebra:
-Top row in the figure bellow are input images to map and bottom row are the mappings produced by our algorithm.
+Top row in the figure bellow are input images and bottom row are the mappings produced by our algorithm.
 <img src='imgs/HtZ.jpg' width="900px"/>
 #### Zebra to Horse:
-Top row in the figure bellow are input images to map and bottom row are the mappings produced by our algorithm.
+Top row in the figure bellow are input images and bottom row are the mappings produced by our algorithm.
 <img src='imgs/ZtH.jpg' width="900px"/>
+
+### Apple to Orange image translation results: 
+#### Apple to Orange:
+Top row in the figure bellow are input images and bottom row are the mappings produced by our algorithm.
+<img src='imgs/AtO.jpg' width="900px"/>
+#### Orange to Apple:
+Top row in the figure bellow are input images and bottom row are the mappings produced by our algorithm.
+<img src='imgs/OtA.jpg' width="900px"/>
 
 ### Getting Started with the code
 ### Prepare dataset
@@ -62,11 +70,11 @@ python main.py  --to_train=1 --log_dir=./output/AAGAN/exp_01 --config_filename=.
 	```bash
 	tensorboard --port=6006 --logdir=./output/AAGAN/exp_01/#timestamp# 
 	```
-	* Check the html visualization at CycleGAN_TensorFlow/output/cyclegan/exp_01/#timestamp#/epoch_#id#.html.  
+	* Check the html visualization at ./output/AAGAN/exp_01/#timestamp#/epoch_#id#.html.  
 
 ### Restoring from the previous checkpoint.
 ```bash
-python main.py --to_train=2 --log_dir=./output/cyclegan/exp_01 --config_filename=./configs/exp_01.json --checkpoint_dir=./output/AAGAN/exp_01/#timestamp#
+python main.py --to_train=2 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01.json --checkpoint_dir=./output/AAGAN/exp_01/#timestamp#
 ```
 ### Testing
 * Create the testing dataset.
