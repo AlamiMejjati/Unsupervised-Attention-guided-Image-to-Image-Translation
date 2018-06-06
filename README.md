@@ -55,10 +55,7 @@ Top row in the figure bellow are input images to map and bottom row are the mapp
 
 * Start training:
 ```bash
-python main.py \
-    --to_train=1 \
-    --log_dir=./output/AAGAN/exp_01 \
-    --config_filename=./configs/exp_01.json
+python main.py  --to_train=1 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01.json
 ```
 * Check the intermediate results.
 	* Tensorboard
