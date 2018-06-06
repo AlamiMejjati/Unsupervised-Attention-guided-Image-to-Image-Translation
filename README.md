@@ -1,4 +1,4 @@
-<img src='imgs/AAGANDiagram.pdf' width="900px"/>
+<img src='imgs/AAGANDiagram.jpg' width="900px"/>
 
 
 
