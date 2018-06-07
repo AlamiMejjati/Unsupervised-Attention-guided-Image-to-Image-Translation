@@ -1,6 +1,6 @@
 # Unsupervised Attention-Guided image to image translation
 
-This repository contains the Tensorflow code for our paper Unsupervised Attention-Guided Image to Image translation **(Add link to paper))**. This code is based on the Tensorflow implementation of CycleGan provided by [Harry Yang](https://github.com/leehomyc/cyclegan-1).
+This repository contains the Tensorflow code for our paper Unsupervised Attention-Guided Image to Image translation https://arxiv.org/pdf/1806.02311.pdf . This code is based on the Tensorflow implementation of CycleGan provided by [Harry Yang](https://github.com/leehomyc/cyclegan-1).
 
 By leveraging attention, our architecture (shown in the figure bellow) only maps relevant areas of the image, and by doing so, further enhances the quality of image to image translation.
 
