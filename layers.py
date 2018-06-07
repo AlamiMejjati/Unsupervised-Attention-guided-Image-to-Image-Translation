@@ -97,10 +97,8 @@ def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1,
             trainable=False
         )
 
-        ## Uncomment line bellow to use sparse convolution instead.
-        # conv_mask = tf.where(tf.equal(conv_mask, 0), tf.zeros_like(conv_mask), tf.reciprocal(conv_mask))
-
         conv = tf.cond(do_norm, lambda: instance_norm(conv), lambda: conv)
+
 
         if do_relu:
             if(relufactor == 0):
@@ -109,7 +107,6 @@ def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1,
                 conv = lrelu(conv, relufactor, "lrelu")
 
         return conv, tf.cast(tf.greater(conv_mask, 0.), tf.float32)
-        ## Uncomment line bellow to use sparse convolutions instead.
         # return conv, conv_mask
 
 def general_deconv2d(inputconv, outshape, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1,

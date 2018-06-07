@@ -20,7 +20,7 @@ class CycleGAN:
 
     def __init__(self, pool_size, lambda_a,
                  lambda_b, output_root_dir, to_restore,
-                 base_lr, max_step,
+                 base_lr, max_step, network_version,
                  dataset_name, checkpoint_dir, do_flipping, skip):
         current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -34,6 +34,7 @@ class CycleGAN:
         self._to_restore = to_restore
         self._base_lr = base_lr
         self._max_step = max_step
+        self._network_version = network_version
         self._dataset_name = dataset_name
         self._checkpoint_dir = checkpoint_dir
         self._do_flipping = do_flipping
@@ -119,7 +120,7 @@ class CycleGAN:
         }
 
         outputs = model.get_outputs(
-            inputs, skip=self._skip)
+            inputs, network=self._network_version, skip=self._skip)
 
         self.prob_real_a_is_real = outputs['prob_real_a_is_real']
         self.prob_real_b_is_real = outputs['prob_real_b_is_real']
@@ -407,7 +408,7 @@ class CycleGAN:
             for epoch in range(sess.run(self.global_step), self._max_step):
                 print("In the epoch ", epoch)
                 saver.save(sess, os.path.join(
-                    self._output_dir, "AAGAN"), global_step=epoch)
+                    self._output_dir, "cyclegan"), global_step=epoch)
 
                 # Dealing with the learning rate as per the epoch number
                 if epoch < 50:
@@ -549,6 +550,63 @@ class CycleGAN:
             coord.request_stop()
             coord.join(threads)
 
+    def test_(self):
+        """Test Function."""
+        import glob
+        print("Testing the results")
+        if not os.path.exists(self._images_dir):
+            os.makedirs(self._images_dir)
+
+        foldA = 'testB'
+        foldB = 'testA'
+        filenamesA = glob.glob(os.path.join('./input', 'horse2zebra', foldB, '*.jpg'))
+
+        filenamesB = glob.glob(os.path.join('./input', 'horse2zebra', foldA, '*.jpg'))
+
+        self.model_setup()
+        saver = tf.train.Saver()
+        init = tf.global_variables_initializer()
+        from scipy.misc import imread, imresize
+        with tf.Session() as sess:
+            sess.run(init)
+
+            chkpt_fname = tf.train.latest_checkpoint(self._checkpoint_dir)
+            saver.restore(sess, chkpt_fname)
+
+            # coord = tf.train.Coordinator()
+            # threads = tf.train.start_queue_runners(coord=coord)
+            for i in range(len(filenamesB)):
+                im = imread(filenamesB[i])
+                im = imresize(im, [256,256,3])
+                im = im/127.5 -1
+                im = np.expand_dims(im, 0)
+                im = im.astype(np.float32)
+                fake_B_temp= sess.run([
+                    self.fake_images_b,
+                ], feed_dict={
+                    self.input_a: im,
+                    self.transition_rate: 0.1
+                })
+                imsave(os.path.join(self._images_dir, foldB+'_'+str(i)+'.jpg'),
+                       ((fake_B_temp[0].squeeze() + 1) * 127.5).astype(np.uint8)
+                       )
+
+
+            for i in range(len(filenamesA)):
+                im = imread(filenamesA[i])
+                im = imresize(im, [256,256,3])
+                im = im/127.5 -1
+                im = np.expand_dims(im, 0)
+                im = im.astype(np.float32)
+                fake_A_temp= sess.run([
+                    self.fake_images_a,
+                ], feed_dict={
+                    self.input_b: im,
+                    self.transition_rate: 0.1
+                })
+                imsave(os.path.join(self._images_dir, foldA + '_' + str(i) + '.jpg'),
+                       ((fake_A_temp[0].squeeze() + 1) * 127.5).astype(np.uint8)
+                       )
 def parse_args():
     desc = "Tensorflow implementation of cycleGan using attention"
     parser = argparse.ArgumentParser(description=desc)
@@ -610,11 +668,12 @@ def main():
     to_restore = (to_train == 2)
     base_lr = float(config['base_lr']) if 'base_lr' in config else 0.0002
     max_step = int(config['max_step']) if 'max_step' in config else 200
+    network_version = str(config['network_version'])
     dataset_name = str(config['dataset_name'])
     do_flipping = bool(config['do_flipping'])
 
     cyclegan_model = CycleGAN(pool_size, lambda_a, lambda_b, log_dir,
-                              to_restore, base_lr, max_step,
+                              to_restore, base_lr, max_step, network_version,
                               dataset_name, checkpoint_dir, do_flipping, skip)
 
     if to_train > 0:
