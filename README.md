@@ -46,7 +46,7 @@ Top row in the figure bellow are input images and bottom row are the mappings pr
 	}
 
 	PATH_TO_CSV = {
-    'horse2zebra_train': './AAGAN/input/horse2zebra/horse2zebra_train.csv'
+    'horse2zebra_train': './AGGAN/input/horse2zebra/horse2zebra_train.csv'
 	}
 
 	DATASET_TO_IMAGETYPE = {
@@ -63,18 +63,18 @@ Top row in the figure bellow are input images and bottom row are the mappings pr
 
 * Start training:
 ```bash
-python main.py  --to_train=1 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01.json
+python main.py  --to_train=1 --log_dir=./output/AGGAN/exp_01 --config_filename=./configs/exp_01.json
 ```
 * Check the intermediate results.
 	* Tensorboard
 	```bash
-	tensorboard --port=6006 --logdir=./output/AAGAN/exp_01/#timestamp# 
+	tensorboard --port=6006 --logdir=./output/AGGAN/exp_01/#timestamp# 
 	```
-	* Check the html visualization at ./output/AAGAN/exp_01/#timestamp#/epoch_#id#.html.  
+	* Check the html visualization at ./output/AGGAN/exp_01/#timestamp#/epoch_#id#.html.  
 
 ### Restoring from the previous checkpoint.
 ```bash
-python main.py --to_train=2 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01.json --checkpoint_dir=./output/AAGAN/exp_01/#timestamp#
+python main.py --to_train=2 --log_dir=./output/AGGAN/exp_01 --config_filename=./configs/exp_01.json --checkpoint_dir=./output/AGGAN/exp_01/#timestamp#
 ```
 ### Testing
 * Create the testing dataset.
@@ -85,4 +85,4 @@ python main.py --to_train=2 --log_dir=./output/AAGAN/exp_01 --config_filename=./
 	```
 * Run testing.
 ```bash
-python main.py --to_train=0 --log_dir=./output/AAGAN/exp_01 --config_filename=./configs/exp_01_test.json --checkpoint_dir=./output/AAGAN/exp_01/#old_timestamp# 
+python main.py --to_train=0 --log_dir=./output/AGGAN/exp_01 --config_filename=./configs/exp_01_test.json --checkpoint_dir=./output/AGGAN/exp_01/#old_timestamp# 
