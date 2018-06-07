@@ -56,7 +56,7 @@ Top row in the figure bellow are input images and bottom row are the mappings pr
 	``` 
 	* Run create_cyclegan_dataset.py:
 	```bash
-	python -m create_cyclegan_dataset --image_path_a='./input/horse2zebra/trainA' --image_path_b='./input/horse2zebra/trainB'  --dataset_name="horse2zebra_train" --do_shuffle=0
+	python -m create_cyclegan_dataset --image_path_a='./input/horse2zebra/trainB' --image_path_b='./input/horse2zebra/trainA'  --dataset_name="horse2zebra_train" --do_shuffle=0
 	```
 ### Training
 * Create the configuration file. The configuration file contains basic information for training/testing. An example of the configuration file could be found at configs/exp_01.json. 
