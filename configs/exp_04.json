@@ -1,0 +1,11 @@
+{
+  "description": "The official PyTorch version of CycleGAN.", 
+  "pool_size": 50,
+  "base_lr":0.0001,
+  "max_step": 100,
+  "network_version": "pytorch",
+  "dataset_name": "lion2tiger_train",
+  "do_flipping": 1,
+  "_LAMBDA_A": 10,
+  "_LAMBDA_B": 10
+}

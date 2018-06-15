@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Unsupervised-Attention-guided-Image-to-Image-Translation.iml" filepath="$PROJECT_DIR$/.idea/Unsupervised-Attention-guided-Image-to-Image-Translation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/AAGAN.iml" filepath="$PROJECT_DIR$/.idea/AAGAN.iml" />
     </modules>
   </component>
 </project>
