@@ -190,10 +190,7 @@ def build_partial_resnet_block(inputres, mask_in, dim, name="resnet"):
         return tf.nn.relu(out_res_in + inputres), mask_end
 
 def build_generator_resnet_9blocks_bis(inputgen, mask, transition_rate, name="generator", skip=False):
-    """ Instead of normal convolutions, We make use of [Uhrig et al: Sparsity Invariant CNNs].
-    However we omit the normalizing factor they use by replaqcing it by 1. This removes the
-    effect of the bias coming from masked regions in the input.
-    """
+
     with tf.variable_scope(name):
         f = 7
         ks = 3
@@ -206,19 +203,19 @@ def build_generator_resnet_9blocks_bis(inputgen, mask, transition_rate, name="ge
         o_c1, mask = layers.general_partial_conv2d(
             inputgen, mask, tf.constant(False, dtype=bool), ngf, f, f, 1, 1, 0.02, name="c1")
 
-        o_c1_in = tf.multiply(o_c1, mask)
+        # o_c1_in = tf.multiply(o_c1, mask)
 
         o_c2, mask = layers.general_partial_conv2d(
-            o_c1_in, mask, tf.constant(False, dtype=bool),ngf * 2, ks, ks, 2, 2, 0.02, padding='same', name="c2")
+            o_c1, mask, tf.constant(False, dtype=bool),ngf * 2, ks, ks, 2, 2, 0.02, padding='same', name="c2")
 
-        o_c2_in = tf.multiply(o_c2, mask)
+        # o_c2_in = tf.multiply(o_c2, mask)
 
         o_c3, mask = layers.general_partial_conv2d(
-            o_c2_in, mask, tf.constant(False, dtype=bool), ngf * 4, ks, ks, 2, 2, 0.02, padding='same', name="c3")
+            o_c2, mask, tf.constant(False, dtype=bool), ngf * 4, ks, ks, 2, 2, 0.02, padding='same', name="c3")
 
-        o_c3_in = tf.multiply(o_c3, mask)
+        # o_c3_in = tf.multiply(o_c3, mask)
 
-        o_r1, mask_r1 = build_partial_resnet_block(o_c3_in, mask, ngf * 4, "r1")
+        o_r1, mask_r1 = build_partial_resnet_block(o_c3, mask, ngf * 4, "r1")
         o_r2, mask_r2 = build_partial_resnet_block(o_r1, mask_r1, ngf * 4, "r2")
         o_r3, mask_r3 = build_partial_resnet_block(o_r2, mask_r2, ngf * 4, "r3")
         o_r4, mask_r4 = build_partial_resnet_block(o_r3, mask_r3, ngf * 4, "r4")
@@ -324,10 +321,6 @@ def discriminator(inputdisc,  mask, transition_rate,  name="discriminator"):
         return o_c5
 
 def discriminator_bis(inputdisc,  mask, transition_rate, donorm,  name="discriminator"):
-    """ Instead of normal convolutions, We make use of [Uhrig et al: Sparsity Invariant CNNs].
-    However we omit the normalizing factor they use by replacing it by 1. This removes the
-    effect of the bias coming from masked regions in the input.
-    """
 
     with tf.variable_scope(name):
         mask = tf.cast(tf.greater_equal(mask, transition_rate), tf.float32)
@@ -343,8 +336,7 @@ def discriminator_bis(inputdisc,  mask, transition_rate, donorm,  name="discrimi
                                      0.02, "VALID", "c1",
                                      relufactor=0.2)
 
-        o_c1 = tf.multiply(o_c1, mask_1)
-
+        # o_c1 = tf.multiply(o_c1, mask_1)
         pad_o_c1 = tf.pad(o_c1, [[0, 0], [padw, padw], [
             padw, padw], [0, 0]], "CONSTANT")
         pad_mask = tf.pad(mask_1, [[0, 0], [padw, padw], [
@@ -353,7 +345,7 @@ def discriminator_bis(inputdisc,  mask, transition_rate, donorm,  name="discrimi
         o_c2, mask_2 = layers.general_partial_conv2d(pad_o_c1, pad_mask, donorm, ndf * 2, f, f, 2, 2,
                                      0.02, "VALID", "c2",  relufactor=0.2)
 
-        o_c2 = tf.multiply(o_c2, mask_2)
+        # o_c2 = tf.multiply(o_c2, mask_2)
         pad_o_c2 = tf.pad(o_c2, [[0, 0], [padw, padw], [
             padw, padw], [0, 0]], "CONSTANT")
         pad_mask = tf.pad(mask_2, [[0, 0], [padw, padw], [
@@ -361,7 +353,7 @@ def discriminator_bis(inputdisc,  mask, transition_rate, donorm,  name="discrimi
 
         o_c3, mask_3 = layers.general_partial_conv2d(pad_o_c2, pad_mask, donorm ,ndf * 4, f, f, 2, 2,
                                      0.02, "VALID", "c3", relufactor=0.2)
-        o_c3 = tf.multiply(o_c3, mask_3)
+        # o_c3 = tf.multiply(o_c3, mask_3)
         pad_o_c3 = tf.pad(o_c3, [[0, 0], [padw, padw], [
             padw, padw], [0, 0]], "CONSTANT")
         pad_mask = tf.pad(mask_3, [[0, 0], [padw, padw], [
@@ -369,7 +361,7 @@ def discriminator_bis(inputdisc,  mask, transition_rate, donorm,  name="discrimi
 
         o_c4, mask_4 = layers.general_partial_conv2d(pad_o_c3, pad_mask, donorm, ndf * 8, f, f, 1, 1,
                                      0.02, "VALID", "c4", relufactor=0.2)
-        o_c4 = tf.multiply(o_c4, mask_4)
+        # o_c4 = tf.multiply(o_c4, mask_4)
         pad_o_c4 = tf.pad(o_c4, [[0, 0], [padw, padw], [
             padw, padw], [0, 0]], "CONSTANT")
         pad_mask = tf.pad(mask_4, [[0, 0], [padw, padw], [
