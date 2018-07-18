@@ -415,7 +415,7 @@ class CycleGAN:
                     curr_lr = self._base_lr - \
                         self._base_lr * (epoch - 50) / 50
 
-                if epoch < 30:
+                if epoch < 50: # 50 gives better horse->zebra images.
                     curr_tr = 0.
                     donorm = True
                     ratio = 1.

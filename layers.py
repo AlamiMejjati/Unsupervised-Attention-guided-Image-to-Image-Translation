@@ -106,7 +106,10 @@ def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1,
             else:
                 conv = lrelu(conv, relufactor, "lrelu")
 
-        return conv, tf.cast(tf.greater(conv_mask, 0.), tf.float32)
+        # Uncomment to use the convolution in [Uhrig et al: Sparsity Invariant CNNs] without the normalizing factor.
+        # return conv, tf.cast(tf.greater(conv_mask, 0.), tf.float32)
+
+        return conv, tf.cast(tf.greater_equal(conv_mask, 0.), tf.float32) # Equivalent to a normal convolution.
 
 def general_deconv2d(inputconv, outshape, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1,
                      stddev=0.02, padding="VALID", name="deconv2d",
