@@ -178,7 +178,7 @@ class CycleGAN:
         )
 
         optimizer = tf.train.AdamOptimizer(self.learning_rate, beta1=0.5)
-        optimizer2 = tf.train.AdamOptimizer(self.learning_rate/self.ratio, beta1=0.5)
+        optimizer2 = tf.train.AdamOptimizer(self.learning_rate*self.ratio, beta1=0.5)
         self.model_vars = tf.trainable_variables()
 
         d_A_vars = [var for var in self.model_vars if 'd_A' in var.name]
@@ -415,14 +415,14 @@ class CycleGAN:
                     curr_lr = self._base_lr - \
                         self._base_lr * (epoch - 50) / 50
 
-                if epoch < 50: # 50 gives better horse->zebra images.
+                if epoch < 30:
                     curr_tr = 0.
                     donorm = True
                     ratio = 1.
                 else:
                     curr_tr = 0.1
                     donorm = False
-                    ratio = 1e5 # reduces the effect of initialization compared to 100
+                    ratio = 1e-5 # Less sensitive to initialization ompared to 100
 
 
                 self.save_images(sess, epoch, curr_tr)

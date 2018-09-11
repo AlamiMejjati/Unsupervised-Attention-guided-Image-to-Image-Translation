@@ -215,15 +215,25 @@ def build_generator_resnet_9blocks_bis(inputgen, mask, transition_rate, name="ge
 
         # o_c3_in = tf.multiply(o_c3, mask)
 
-        o_r1, mask_r1 = build_partial_resnet_block(o_c3, mask, ngf * 4, "r1")
-        o_r2, mask_r2 = build_partial_resnet_block(o_r1, mask_r1, ngf * 4, "r2")
-        o_r3, mask_r3 = build_partial_resnet_block(o_r2, mask_r2, ngf * 4, "r3")
-        o_r4, mask_r4 = build_partial_resnet_block(o_r3, mask_r3, ngf * 4, "r4")
-        o_r5, mask_r5 = build_partial_resnet_block(o_r4, mask_r4, ngf * 4, "r5")
-        o_r6, mask_r6 = build_partial_resnet_block(o_r5, mask_r5, ngf * 4, "r6")
-        o_r7, mask_r7 = build_partial_resnet_block(o_r6, mask_r6, ngf * 4, "r7")
-        o_r8, mask_r8 = build_partial_resnet_block(o_r7, mask_r7, ngf * 4, "r8")
-        o_r9, mask_r9 = build_partial_resnet_block(o_r8, mask_r8, ngf * 4, "r9")
+        #o_r1, mask_r1 = build_partial_resnet_block(o_c3, mask, ngf * 4, "r1")
+        #o_r2, mask_r2 = build_partial_resnet_block(o_r1, mask_r1, ngf * 4, "r2")
+        #o_r3, mask_r3 = build_partial_resnet_block(o_r2, mask_r2, ngf * 4, "r3")
+        #o_r4, mask_r4 = build_partial_resnet_block(o_r3, mask_r3, ngf * 4, "r4")
+        #o_r5, mask_r5 = build_partial_resnet_block(o_r4, mask_r4, ngf * 4, "r5")
+        #o_r6, mask_r6 = build_partial_resnet_block(o_r5, mask_r5, ngf * 4, "r6")
+        #o_r7, mask_r7 = build_partial_resnet_block(o_r6, mask_r6, ngf * 4, "r7")
+        #o_r8, mask_r8 = build_partial_resnet_block(o_r7, mask_r7, ngf * 4, "r8")
+        #o_r9, mask_r9 = build_partial_resnet_block(o_r8, mask_r8, ngf * 4, "r9")
+
+        o_r1 = build_resnet_block(o_c3, ngf * 4, "r1", padding)
+        o_r2 = build_resnet_block(o_r1, ngf * 4, "r2", padding)
+        o_r3 = build_resnet_block(o_r2, ngf * 4, "r3", padding)
+        o_r4 = build_resnet_block(o_r3, ngf * 4, "r4", padding)
+        o_r5 = build_resnet_block(o_r4, ngf * 4, "r5", padding)
+        o_r6 = build_resnet_block(o_r5, ngf * 4, "r6", padding)
+        o_r7 = build_resnet_block(o_r6, ngf * 4, "r7", padding)
+        o_r8 = build_resnet_block(o_r7, ngf * 4, "r8", padding)
+        o_r9 = build_resnet_block(o_r8, ngf * 4, "r9", padding)
 
         o_c4 = layers.general_deconv2d(
             o_r9, [BATCH_SIZE, 128, 128, ngf * 2], ngf * 2, ks, ks, 2, 2, 0.02,
