@@ -1,6 +1,0 @@
-{
-  "description": "Testing with trained model.",
-  "network_version": "pytorch",
-  "dataset_name": "german2collie_test",
-  "do_flipping": 0
-}

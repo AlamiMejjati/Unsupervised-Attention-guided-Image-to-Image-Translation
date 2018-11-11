@@ -12,6 +12,8 @@ import tensorflow as tf
 import cyclegan_datasets
 import data_loader, losses, model
 
+tf.set_random_seed(1)
+np.random.seed(0)
 slim = tf.contrib.slim
 
 
@@ -21,14 +23,17 @@ class CycleGAN:
     def __init__(self, pool_size, lambda_a,
                  lambda_b, output_root_dir, to_restore,
                  base_lr, max_step, network_version,
-                 dataset_name, checkpoint_dir, do_flipping, skip):
+                 dataset_name, checkpoint_dir, do_flipping, skip, switch, threshold_fg):
         current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
 
         self._pool_size = pool_size
         self._size_before_crop = 286
+        self._switch = switch
+        self._threshold_fg = threshold_fg
         self._lambda_a = lambda_a
         self._lambda_b = lambda_b
-        self._output_dir = os.path.join(output_root_dir, current_time)
+        self._output_dir = os.path.join(output_root_dir, current_time +
+                                        '_switch'+str(switch)+'_thres_'+str(threshold_fg))
         self._images_dir = os.path.join(self._output_dir, 'imgs')
         self._num_imgs_to_save = 20
         self._to_restore = to_restore
@@ -106,7 +111,6 @@ class CycleGAN:
         self.learning_rate = tf.placeholder(tf.float32, shape=[], name="lr")
         self.transition_rate = tf.placeholder(tf.float32, shape=[], name="tr")
         self.donorm = tf.placeholder(tf.bool, shape=[], name="donorm")
-        self.ratio = tf.placeholder(tf.float32, shape=[], name="ratio")
 
         inputs = {
             'images_a': self.input_a,
@@ -120,7 +124,7 @@ class CycleGAN:
         }
 
         outputs = model.get_outputs(
-            inputs, network=self._network_version, skip=self._skip)
+            inputs, skip=self._skip)
 
         self.prob_real_a_is_real = outputs['prob_real_a_is_real']
         self.prob_real_b_is_real = outputs['prob_real_b_is_real']
@@ -178,7 +182,6 @@ class CycleGAN:
         )
 
         optimizer = tf.train.AdamOptimizer(self.learning_rate, beta1=0.5)
-        optimizer2 = tf.train.AdamOptimizer(self.learning_rate*self.ratio, beta1=0.5)
         self.model_vars = tf.trainable_variables()
 
         d_A_vars = [var for var in self.model_vars if 'd_A' in var.name]
@@ -188,21 +191,11 @@ class CycleGAN:
         g_Ae_vars = [var for var in self.model_vars if 'g_A_ae' in var.name]
         g_Be_vars = [var for var in self.model_vars if 'g_B_ae' in var.name]
 
-        grads = tf.gradients(g_loss_A, g_A_vars + g_Ae_vars)
-        grads1 = grads[:len(g_A_vars)]
-        grads2 = grads[len(g_A_vars):]
-        train_op1 = optimizer.apply_gradients(zip(grads1, g_A_vars))
-        train_op2 = optimizer2.apply_gradients(zip(grads2, g_Ae_vars))
-        self.g_A_trainer = tf.group(train_op1, train_op2)
 
-        grads = tf.gradients(g_loss_B, g_B_vars + g_Be_vars)
-        grads1 = grads[:len(g_B_vars)]
-        grads2 = grads[len(g_B_vars):]
-        train_op1_ = optimizer.apply_gradients(zip(grads1, g_B_vars))
-        train_op2_ = optimizer2.apply_gradients(zip(grads2, g_Be_vars))
-        self.g_B_trainer = tf.group(train_op1_, train_op2_)
-
-
+        self.g_A_trainer = optimizer.minimize(g_loss_A, var_list=g_A_vars+g_Ae_vars)
+        self.g_B_trainer = optimizer.minimize(g_loss_B, var_list=g_B_vars+g_Be_vars)
+        self.g_A_trainer_bis = optimizer.minimize(g_loss_A, var_list=g_A_vars)
+        self.g_B_trainer_bis = optimizer.minimize(g_loss_B, var_list=g_B_vars)
         self.d_A_trainer = optimizer.minimize(d_loss_A, var_list=d_A_vars)
         self.d_B_trainer = optimizer.minimize(d_loss_B, var_list=d_B_vars)
 
@@ -216,7 +209,6 @@ class CycleGAN:
         self.g_B_loss_summ = tf.summary.scalar("g_B_loss", g_loss_B)
         self.d_A_loss_summ = tf.summary.scalar("d_A_loss", d_loss_A)
         self.d_B_loss_summ = tf.summary.scalar("d_B_loss", d_loss_B)
-
 
     def save_images(self, sess, epoch, curr_tr):
         """
@@ -235,10 +227,7 @@ class CycleGAN:
 
         names = ['inputA_', 'inputB_', 'fakeA_',
                  'fakeB_', 'cycA_', 'cycB_',
-                 'masked_imA', 'masked_imB', 'masked_imAcycle', 'masked_imBcycle',
-                 'mask_a', 'mask_b',
-                 'mask_a_cycle', 'mask_b_cycle',
-                 'fakeA_masked','fakeB_masked', 'cycA_masked', 'cycB_masked']
+                 'mask_a', 'mask_b']
 
         with open(os.path.join(
                 self._output_dir, 'epoch_' + str(epoch) + '.html'
@@ -246,14 +235,12 @@ class CycleGAN:
             for i in range(0, self._num_imgs_to_save):
                 print("Saving image {}/{}".format(i, self._num_imgs_to_save))
                 inputs = sess.run(self.inputs)
-                fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp, masks, msked_gen_ims, masked_ims = sess.run([
+                fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp, masks = sess.run([
                     self.fake_images_a,
                     self.fake_images_b,
                     self.cycle_images_a,
                     self.cycle_images_b,
                     self.masks,
-                    self.masked_gen_ims,
-                    self.masked_ims
                 ], feed_dict={
                     self.input_a: inputs['images_i'],
                     self.input_b: inputs['images_j'],
@@ -262,7 +249,7 @@ class CycleGAN:
                 })
 
                 tensors = [inputs['images_i'], inputs['images_j'],
-                           fake_B_temp, fake_A_temp, cyc_A_temp, cyc_B_temp]+masked_ims+masks +msked_gen_ims
+                           fake_B_temp, fake_A_temp, cyc_A_temp, cyc_B_temp, masks[0], masks[1]]
 
                 for name, tensor in zip(names, tensors):
                     image_name = name + str(epoch) + "_" + str(i) + ".jpg"
@@ -291,41 +278,34 @@ class CycleGAN:
         if not os.path.exists(self._images_dir):
             os.makedirs(self._images_dir)
 
-        names = ['inputA_', 'inputB_', 'fakeA_',
-                 'fakeB_', 'cycA_', 'cycB_',
-                 'mask_a', 'mask_b',
-                 'mask_a_cycle', 'mask_b_cycle',
-                 'fakeA_masked','fakeB_masked', 'cycA_masked', 'cycB_masked', 'backgrounda', 'backgroundb',
-                 'mask_s_b1', 'mask_s_b2', 'masked_gen_fg_a', 'masked_gen_fg_b', 'masked_gen_a', 'masked_gen_b']
+        names = ['input_A_', 'mask_A_', 'masked_inputA_', 'fakeB_',
+                 'input_B_', 'mask_B_', 'masked_inputB_', 'fakeA_']
 
-        with open(os.path.join(
-                self._output_dir, 'epoch_' + str(epoch) + '.html'
-        ), 'w') as v_html:
+        space = '&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp ' \
+                '&nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp ' \
+                '&nbsp &nbsp &nbsp &nbsp &nbsp'
+        with open(os.path.join(self._output_dir, 'results_' + str(epoch) + '.html'), 'w') as v_html:
+            v_html.write("<b>INPUT" + space + "MASK" + space + "MASKED_IMAGE" + space + "GENERATED_IMAGE</b>")
+            v_html.write("<br>")
             for i in range(0, self._num_imgs_to_save):
                 print("Saving image {}/{}".format(i, self._num_imgs_to_save))
                 inputs = sess.run(self.inputs)
-                fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp, masks, msked_gen_ims, masked_ims = sess.run([
+                fake_A_temp, fake_B_temp, masks, masked_ims = sess.run([
                     self.fake_images_a,
                     self.fake_images_b,
-                    self.cycle_images_a,
-                    self.cycle_images_b,
                     self.masks,
-                    self.masked_gen_ims,
                     self.masked_ims
                 ], feed_dict={
                     self.input_a: inputs['images_i'],
                     self.input_b: inputs['images_j'],
                     self.transition_rate: 0.1
                 })
-
-                tensors = [inputs['images_i'], inputs['images_j'],
-                           fake_B_temp, fake_A_temp, cyc_A_temp, cyc_B_temp]+masks+masked_ims+\
-                          [np.multiply(1-masks[0], inputs['images_i']), np.multiply(1-masks[1], inputs['images_j']),
-                           1-masks[0], 1-masks[1], np.multiply(fake_A_temp, masks[1]), np.multiply(fake_B_temp, masks[0])] \
-                          + [msked_gen_ims[0] , msked_gen_ims[1]]
+                tensors = [inputs['images_i'], masks[0], masked_ims[0], fake_B_temp,
+                           inputs['images_j'], masks[1], masked_ims[1], fake_A_temp]
 
                 for name, tensor in zip(names, tensors):
-                    image_name = name + str(epoch) + "_" + str(i) + ".png"
+                    image_name = name + str(i) + ".jpg"
+
                     if 'mask_' in name:
                         imsave(os.path.join(self._images_dir, image_name),
                                (np.squeeze(tensor[0]))
@@ -335,10 +315,14 @@ class CycleGAN:
                         imsave(os.path.join(self._images_dir, image_name),
                                ((np.squeeze(tensor[0]) + 1) * 127.5).astype(np.uint8)
                                )
+
                     v_html.write(
                         "<img src=\"" +
                         os.path.join('imgs', image_name) + "\">"
                     )
+
+                    if 'fakeB_' in name:
+                        v_html.write("<br>")
                 v_html.write("<br>")
 
     def fake_image_pool(self, num_fakes, fake, mask, fake_pool):
@@ -370,7 +354,7 @@ class CycleGAN:
         # Load Dataset from the dataset folder
         self.inputs = data_loader.load_data(
             self._dataset_name, self._size_before_crop,
-            True, self._do_flipping)
+            False, self._do_flipping)
 
         # Build the network
         self.model_setup()
@@ -385,10 +369,9 @@ class CycleGAN:
         saver = tf.train.Saver(max_to_keep=None)
 
         max_images = cyclegan_datasets.DATASET_TO_SIZES[self._dataset_name]
-        curr_tr = 0.
+        half_training = int(self._max_step / 2)
         with tf.Session() as sess:
             sess.run(init)
-
             # Restore the model to run the model from last checkpoint
             if self._to_restore:
                 chkpt_fname = tf.train.latest_checkpoint(self._checkpoint_dir)
@@ -409,20 +392,22 @@ class CycleGAN:
                     self._output_dir, "cyclegan"), global_step=epoch)
 
                 # Dealing with the learning rate as per the epoch number
-                if epoch < 50:
+                if epoch < half_training:
                     curr_lr = self._base_lr
                 else:
                     curr_lr = self._base_lr - \
-                        self._base_lr * (epoch - 50) / 50
+                        self._base_lr * (epoch - half_training) / half_training
 
-                if epoch < 30:
+                if epoch < self._switch:
                     curr_tr = 0.
                     donorm = True
-                    ratio = 1.
+                    to_train_A = self.g_A_trainer
+                    to_train_B = self.g_B_trainer
                 else:
-                    curr_tr = 0.1
+                    curr_tr = self._threshold_fg
                     donorm = False
-                    ratio = 1e-5 # Less sensitive to initialization ompared to 100
+                    to_train_A = self.g_A_trainer_bis
+                    to_train_B = self.g_B_trainer_bis
 
 
                 self.save_images(sess, epoch, curr_tr)
@@ -431,10 +416,9 @@ class CycleGAN:
                     print("Processing batch {}/{}".format(i, max_images))
 
                     inputs = sess.run(self.inputs)
-
                     # Optimizing the G_A network
                     _, fake_B_temp, smask_a,summary_str = sess.run(
-                        [self.g_A_trainer,
+                        [to_train_A,
                          self.fake_images_b,
                          self.masks[0],
                          self.g_A_loss_summ],
@@ -446,7 +430,6 @@ class CycleGAN:
                             self.learning_rate: curr_lr,
                             self.transition_rate: curr_tr,
                             self.donorm: donorm,
-                            self.ratio : ratio,
                         }
                     )
                     writer.add_summary(summary_str, epoch * max_images + i)
@@ -474,7 +457,7 @@ class CycleGAN:
 
                     # Optimizing the G_B network
                     _, fake_A_temp, smask_b, summary_str = sess.run(
-                        [self.g_B_trainer,
+                        [to_train_B,
                          self.fake_images_a,
                          self.masks[1],
                          self.g_B_loss_summ],
@@ -486,7 +469,6 @@ class CycleGAN:
                             self.learning_rate: curr_lr,
                             self.transition_rate: curr_tr,
                             self.donorm: donorm,
-                            self.ratio: ratio,
                         }
                     )
                     writer.add_summary(summary_str, epoch * max_images + i)
@@ -543,68 +525,12 @@ class CycleGAN:
 
             self._num_imgs_to_save = cyclegan_datasets.DATASET_TO_SIZES[
                 self._dataset_name]
-            self.save_images_bis(sess, 0)
+            self.save_images_bis(sess, sess.run(self.global_step))
 
             coord.request_stop()
             coord.join(threads)
 
-    def test_(self):
-        """Test Function."""
-        import glob
-        print("Testing the results")
-        if not os.path.exists(self._images_dir):
-            os.makedirs(self._images_dir)
 
-        foldA = 'testB'
-        foldB = 'testA'
-        filenamesA = glob.glob(os.path.join('./input', 'horse2zebra', foldB, '*.jpg'))
-
-        filenamesB = glob.glob(os.path.join('./input', 'horse2zebra', foldA, '*.jpg'))
-
-        self.model_setup()
-        saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
-        from scipy.misc import imread, imresize
-        with tf.Session() as sess:
-            sess.run(init)
-
-            chkpt_fname = tf.train.latest_checkpoint(self._checkpoint_dir)
-            saver.restore(sess, chkpt_fname)
-
-            # coord = tf.train.Coordinator()
-            # threads = tf.train.start_queue_runners(coord=coord)
-            for i in range(len(filenamesB)):
-                im = imread(filenamesB[i])
-                im = imresize(im, [256,256,3])
-                im = im/127.5 -1
-                im = np.expand_dims(im, 0)
-                im = im.astype(np.float32)
-                fake_B_temp= sess.run([
-                    self.fake_images_b,
-                ], feed_dict={
-                    self.input_a: im,
-                    self.transition_rate: 0.1
-                })
-                imsave(os.path.join(self._images_dir, foldB+'_'+str(i)+'.jpg'),
-                       ((fake_B_temp[0].squeeze() + 1) * 127.5).astype(np.uint8)
-                       )
-
-
-            for i in range(len(filenamesA)):
-                im = imread(filenamesA[i])
-                im = imresize(im, [256,256,3])
-                im = im/127.5 -1
-                im = np.expand_dims(im, 0)
-                im = im.astype(np.float32)
-                fake_A_temp= sess.run([
-                    self.fake_images_a,
-                ], feed_dict={
-                    self.input_b: im,
-                    self.transition_rate: 0.1
-                })
-                imsave(os.path.join(self._images_dir, foldA + '_' + str(i) + '.jpg'),
-                       ((fake_A_temp[0].squeeze() + 1) * 127.5).astype(np.uint8)
-                       )
 def parse_args():
     desc = "Tensorflow implementation of cycleGan using attention"
     parser = argparse.ArgumentParser(description=desc)
@@ -620,13 +546,13 @@ def parse_args():
     parser.add_argument('--checkpoint_dir', type=str, default='', help='The name of the train/test split.')
     parser.add_argument('--skip', type=bool, default=False,
                         help='Whether to add skip connection between input and output.')
+    parser.add_argument('--switch', type=int, default=30,
+                        help='In what epoch the FG starts to be fed to the discriminator')
+    parser.add_argument('--threshold', type=float, default=0.1,
+                        help='The threshold value to select the FG')
 
 
     return parser.parse_args()
-
-
-
-
 
 def main():
     """
@@ -650,6 +576,8 @@ def main():
     config_filename = args.config_filename
     checkpoint_dir = args.checkpoint_dir
     skip = args.skip
+    switch = args.switch
+    threshold_fg = args.threshold
 
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
@@ -672,12 +600,13 @@ def main():
 
     cyclegan_model = CycleGAN(pool_size, lambda_a, lambda_b, log_dir,
                               to_restore, base_lr, max_step, network_version,
-                              dataset_name, checkpoint_dir, do_flipping, skip)
+                              dataset_name, checkpoint_dir, do_flipping, skip,
+                              switch, threshold_fg)
 
     if to_train > 0:
         cyclegan_model.train()
     else:
-        cyclegan_model.test_()
+        cyclegan_model.test()
 
 
 if __name__ == '__main__':

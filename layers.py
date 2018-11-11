@@ -53,7 +53,7 @@ def instance_norm_bis(x,mask):
         return out
 
 
-def general_conv2d(inputconv, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1, stddev=0.02,
+def general_conv2d_(inputconv, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1, stddev=0.02,
                    padding="VALID", name="conv2d", do_norm=True, do_relu=True,
                    relufactor=0):
     with tf.variable_scope(name):
@@ -77,7 +77,7 @@ def general_conv2d(inputconv, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1, stddev=0.02,
 
         return conv
 
-def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1, stddev=0.02,
+def general_conv2d(inputconv, do_norm, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1, stddev=0.02,
                    padding="VALID", name="conv2d", do_relu=True,
                    relufactor=0):
     with tf.variable_scope(name):
@@ -89,13 +89,6 @@ def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1,
             ),
             biases_initializer=tf.constant_initializer(0.0)
         )
-        conv_mask = tf.contrib.layers.conv2d(
-            mask, o_d, f_w, s_w, padding,
-            activation_fn=None,
-            weights_initializer=tf.constant_initializer(1),
-            biases_initializer=tf.constant_initializer(0),
-            trainable=False
-        )
 
         conv = tf.cond(do_norm, lambda: instance_norm(conv), lambda: conv)
 
@@ -106,10 +99,8 @@ def general_partial_conv2d(inputconv,mask, do_norm, o_d=64, f_h=7, f_w=7, s_h=1,
             else:
                 conv = lrelu(conv, relufactor, "lrelu")
 
-        # Uncomment to use the convolution in [Uhrig et al: Sparsity Invariant CNNs] without the normalizing factor.
-        # return conv, tf.cast(tf.greater(conv_mask, 0.), tf.float32)
 
-        return conv, tf.cast(tf.greater_equal(conv_mask, 0.), tf.float32) # Equivalent to a normal convolution.
+        return conv
 
 def general_deconv2d(inputconv, outshape, o_d=64, f_h=7, f_w=7, s_h=1, s_w=1,
                      stddev=0.02, padding="VALID", name="deconv2d",
