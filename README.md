@@ -88,4 +88,4 @@ python main.py --to_train=2 --log_dir=./output/AGGAN/exp_01 --config_filename=./
 python main.py --to_train=0 --log_dir=./output/AGGAN/exp_01 --config_filename=./configs/exp_01_test.json --checkpoint_dir=./output/AGGAN/exp_01/#old_timestamp# 
 ```
 * Trained models.
-Our trained models can be downloaded from https://drive.google.com/file/d/1DSl13xbJemip4V7EhTEdihbgDqoVJUo8/view?usp=sharing 
+Our trained models can be downloaded from https://drive.google.com/open?id=1YEQMJK41KQj_-HfKFneSI12nWpTajgzT

@@ -389,7 +389,7 @@ class CycleGAN:
             for epoch in range(sess.run(self.global_step), self._max_step):
                 print("In the epoch ", epoch)
                 saver.save(sess, os.path.join(
-                    self._output_dir, "cyclegan"), global_step=epoch)
+                    self._output_dir, "AGGAN"), global_step=epoch)
 
                 # Dealing with the learning rate as per the epoch number
                 if epoch < half_training:
